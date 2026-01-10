@@ -98,7 +98,85 @@ app.get('/apropos', (req, res) => res.render('apropos', { user: getUser('employe
 
 // --> SOUS-PAGES DU CATALOGUE SERVICES
 // Je me base sur ta liste de fichiers dans l'image envoyée
-app.get('/services/restauration', (req, res) => res.render('restauration', { user: getUser('employe') }));
+app.get('/services/restauration', (req, res) => {
+    // Récupérer l'utilisateur depuis la session
+    const user = req.session.user;
+    
+    if (!user) {
+        return res.redirect('/login');
+    }
+
+    // Récupérer les informations du badge depuis la base de données
+    const query = 'SELECT solde_badge, numero_badge FROM employe WHERE id_employe = ?';
+    
+    db.query(query, [user.id_employe], (err, results) => {
+        if (err) {
+            console.error('Erreur lors de la récupération du solde:', err);
+            return res.render('restauration', { 
+                user: user, 
+                solde: 0, 
+                numero_badge: 'N/A' 
+            });
+        }
+        
+        const solde = results[0]?.solde_badge || 0;
+        const numero_badge = results[0]?.numero_badge || 'N/A';
+        
+        res.render('restauration', { 
+            user: user, 
+            solde: solde, 
+            numero_badge: numero_badge 
+        });
+    });
+});
+
+// Route POST pour recharger le badge
+app.post('/services/restauration/recharger', (req, res) => {
+    const user = req.session.user;
+    
+    if (!user) {
+        return res.json({ success: false, message: 'Non authentifié' });
+    }
+
+    const { montant } = req.body;
+    const montantNumber = parseFloat(montant);
+
+    // Validation du montant
+    if (!montant || isNaN(montantNumber) || montantNumber <= 0) {
+        return res.json({ success: false, message: 'Montant invalide' });
+    }
+
+    // Récupérer le solde actuel
+    const querySelect = 'SELECT solde_badge FROM employe WHERE id_employe = ?';
+    
+    db.query(querySelect, [user.id_employe], (err, results) => {
+        if (err) {
+            console.error('Erreur lors de la récupération du solde:', err);
+            return res.json({ success: false, message: 'Erreur serveur' });
+        }
+
+        const soldeActuel = parseFloat(results[0]?.solde_badge || 0);
+        const nouveauSolde = soldeActuel + montantNumber;
+
+        // Mettre à jour le solde dans la base de données
+        const queryUpdate = 'UPDATE employe SET solde_badge = ? WHERE id_employe = ?';
+        
+        db.query(queryUpdate, [nouveauSolde, user.id_employe], (err, result) => {
+            if (err) {
+                console.error('Erreur lors de la mise à jour du solde:', err);
+                return res.json({ success: false, message: 'Erreur lors de la recharge' });
+            }
+
+            console.log(`✅ Recharge effectuée: ${montantNumber}€ ajoutés au solde de l'employé ${user.id_employe}`);
+            res.json({ 
+                success: true, 
+                message: 'Recharge effectuée avec succès',
+                nouveauSolde: nouveauSolde.toFixed(2)
+            });
+        });
+    });
+});
+
 app.get('/services/maintenance', (req, res) => res.render('maintenance', { user: getUser('employe') }));
 app.get('/services/rh', (req, res) => res.render('rh', { user: getUser('employe') }));
 app.get('/services/auto', (req, res) => res.render('auto', { user: getUser('employe') }));
