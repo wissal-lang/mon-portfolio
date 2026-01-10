@@ -7,36 +7,51 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        /* --- 1. CSS DE BASE --- */
+        /* --- CSS RESET & BASE --- */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { display: flex; background-color: #f4f6f8; min-height: 100vh; }
         
-        /* MENU LATÉRAL */
-        .sidebar { width: 260px; background-color: #EAEAEA; display: flex; flex-direction: column; padding: 25px 0; height: 100vh; position: fixed; border-right: 1px solid #d1d1d1; }
+        /* --- SIDEBAR (MENU LATÉRAL) --- */
+        /* Je n'ai pas touché au style pour garder la cohérence */
+        .sidebar { width: 260px; background-color: #EAEAEA; display: flex; flex-direction: column; padding: 25px 0; height: 100vh; position: fixed; border-right: 1px solid #d1d1d1; z-index: 1000; }
         .logo { text-align: center; font-size: 28px; font-weight: 800; color: #000; margin-bottom: 40px; letter-spacing: 1px; }
         
         .menu-items { list-style: none; flex-grow: 1; }
         .menu-items a { display: flex; justify-content: flex-start; gap: 15px; align-items: center; padding: 12px 30px; text-decoration: none; color: #333; font-size: 15px; font-weight: 500; transition: 0.3s; }
         .menu-items a:hover { background-color: #d6d6d6; color: #000; }
+        /* Classe active pour montrer qu'on est sur le dashboard */
         .menu-items li.active a { background-color: #d1d1d1; font-weight: 700; border-left: 4px solid #333; }
         
         .logout-item { margin-top: auto; margin-bottom: 20px; }
 
-        /* CONTENU PRINCIPAL */
-        .main-content { margin-left: 260px; padding: 50px; width: 100%; }
+        /* --- CONTENU PRINCIPAL --- */
+        .main-content { margin-left: 260px; padding: 40px; width: 100%; }
 
-        /* CARTES STATISTIQUES */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px; }
-        .stat-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 15px; border-bottom: 3px solid transparent; }
-        .stat-icon { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; }
-        .stat-info h3 { font-size: 24px; font-weight: 800; margin-bottom: 2px; }
-        .stat-info p { color: #666; font-size: 13px; margin: 0; }
+        /* --- BIENVENUE --- */
+        .welcome-section { margin-bottom: 35px; }
+        .welcome-section h1 { font-size: 28px; color: #2c3e50; }
+        .welcome-section p { color: #7f8c8d; margin-top: 5px; }
 
-        /* ACTUALITÉS */
-        .section-title { margin-bottom: 20px; font-size: 20px; border-left: 5px solid #333; padding-left: 10px; }
-        .news-card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        .news-title { font-weight: bold; font-size: 16px; margin-bottom: 5px; }
-        .news-date { font-size: 12px; color: #999; }
+        /* --- CARTES STATISTIQUES (WIDGETS) --- */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 25px; margin-bottom: 40px; }
+        
+        .stat-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 20px; transition: transform 0.2s; border-bottom: 4px solid transparent; }
+        .stat-card:hover { transform: translateY(-5px); }
+        
+        .stat-icon { width: 55px; height: 55px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; flex-shrink: 0; }
+        
+        .stat-info h3 { font-size: 28px; font-weight: 800; margin-bottom: 2px; color: #333; }
+        .stat-info p { color: #666; font-size: 14px; font-weight: 500; }
+
+        /* --- ACTUALITÉS --- */
+        .section-title { margin-bottom: 20px; font-size: 22px; color: #333; border-left: 5px solid #333; padding-left: 15px; }
+        
+        .news-container { display: grid; gap: 15px; }
+        .news-card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 4px solid #3498db; }
+        .news-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .news-title { font-weight: 700; font-size: 16px; color: #2c3e50; }
+        .news-date { font-size: 12px; color: #95a5a6; background: #f0f2f5; padding: 4px 8px; border-radius: 20px; }
+        .news-body { font-size: 14px; color: #555; line-height: 1.5; }
     </style>
 </head>
 <body>
@@ -61,60 +76,68 @@
 
     <main class="main-content">
         
-        <div style="margin-bottom: 30px;">
-            <h1>Bonjour, <%= (typeof user !== 'undefined' && user) ? user.prenom + ' ' + user.nom : 'Employé' %> 👋</h1>
-            <p style="color: #666; margin-top: 5px;">Bienvenue sur votre espace intranet.</p>
+        <div class="welcome-section">
+            <h1>Bonjour, <%= (typeof user !== 'undefined' && user) ? user.prenom + ' ' + user.nom : 'Collaborateur' %> 👋</h1>
+            <p>Voici un aperçu de vos activités et de vos congés.</p>
         </div>
 
         <div class="stats-grid">
             
-            <div class="stat-card" style="border-bottom-color: #3498db;">
-                <div class="stat-icon" style="background-color: #3498db;"><i class="fas fa-envelope"></i></div>
+            <div class="stat-card" style="border-bottom-color: #9b59b6;">
+                <div class="stat-icon" style="background-color: #9b59b6;"><i class="fas fa-umbrella-beach"></i></div>
                 <div class="stat-info">
-                    <h3>3</h3>
-                    <p>Messages non lus</p>
+                    <h3><%= (typeof soldeConges !== 'undefined') ? soldeConges : 18 %></h3> 
+                    <p>Jours de congés restants</p>
                 </div>
             </div>
 
             <div class="stat-card" style="border-bottom-color: #e67e22;">
-                <div class="stat-icon" style="background-color: #e67e22;"><i class="fas fa-tasks"></i></div>
+                <div class="stat-icon" style="background-color: #e67e22;"><i class="fas fa-tools"></i></div>
                 <div class="stat-info">
                     <h3><%= (typeof nbTickets !== 'undefined') ? nbTickets : 0 %></h3>
-                    <p>Tickets IT Ouverts</p>
+                    <p>Tickets IT en cours</p>
                 </div>
             </div>
 
-            <div class="stat-card" style="border-bottom-color: #2ecc71;">
-                <div class="stat-icon" style="background-color: #2ecc71;"><i class="fas fa-file-alt"></i></div>
+            <div class="stat-card" style="border-bottom-color: #3498db;">
+                <div class="stat-icon" style="background-color: #3498db;"><i class="fas fa-file-signature"></i></div>
                 <div class="stat-info">
-                    <h3>12</h3>
-                    <p>Documents récents</p>
+                    <h3><%= (typeof nbDemandesRH !== 'undefined') ? nbDemandesRH : 0 %></h3>
+                    <p>Demandes RH en attente</p>
                 </div>
             </div>
 
-            <div class="stat-card" style="border-bottom-color: #9b59b6;">
-                <div class="stat-icon" style="background-color: #9b59b6;"><i class="fas fa-user-clock"></i></div>
+            <div class="stat-card" style="border-bottom-color: #e74c3c;">
+                <div class="stat-icon" style="background-color: #e74c3c;"><i class="fas fa-bell"></i></div>
                 <div class="stat-info">
-                    <h3>18</h3>
-                    <p>Jours de congés</p>
+                    <h3><%= (typeof nbNotifs !== 'undefined') ? nbNotifs : 0 %></h3>
+                    <p>Nouvelles notifications</p>
                 </div>
             </div>
 
         </div>
 
-        <h2 class="section-title">Actualités</h2>
+        <h2 class="section-title">Actualités de l'entreprise</h2>
         
-        <% if(typeof annonces != 'undefined' && annonces && annonces.length > 0) { %>
-            <% annonces.forEach(function(annonce) { %>
-                <div class="news-card">
-                    <div class="news-title"><%= annonce.titre %></div>
-                    <p><%= annonce.message %></p>
-                    <span class="news-date"><%= new Date(annonce.date_publication).toLocaleDateString('fr-FR') %></span>
+        <div class="news-container">
+            <% if(typeof annonces != 'undefined' && annonces && annonces.length > 0) { %>
+                <% annonces.forEach(function(annonce) { %>
+                    <div class="news-card">
+                        <div class="news-header">
+                            <span class="news-title"><%= annonce.titre %></span>
+                            <span class="news-date"><i class="far fa-calendar-alt"></i> <%= new Date(annonce.date_publication).toLocaleDateString('fr-FR') %></span>
+                        </div>
+                        <div class="news-body">
+                            <%= annonce.message %>
+                        </div>
+                    </div>
+                <% }); %>
+            <% } else { %>
+                <div class="news-card" style="border-left-color: #ccc;">
+                    <p style="color: #666; font-style: italic;">Aucune nouvelle actualité pour le moment.</p>
                 </div>
-            <% }); %>
-        <% } else { %>
-            <p style="color: #666; font-style: italic;">Aucune nouvelle actualité.</p>
-        <% } %>
+            <% } %>
+        </div>
 
     </main>
 

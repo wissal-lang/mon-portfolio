@@ -1,21 +1,32 @@
 const express = require('express');
 const mysql = require('mysql2');
 const path = require('path');
-const session = require('express-session'); // Optionnel mais recommandé pour la suite
+const session = require('express-session'); // INDISPENSABLE pour garder la connexion
 const app = express();
 const port = 3001;
 
 // --- 1. CONFIGURATION ---
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+
+// Pour lire les données des formulaires et JSON
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// CONFIGURATION DE LA SESSION (C'est ça qui permet de retenir le nom "Soukaina")
+app.use(session({
+    secret: 'mon_secret_super_securise_intranet', // Tu peux mettre ce que tu veux ici
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false } // Mettre 'true' seulement si tu es en HTTPS
+}));
+
 // --- 2. BASE DE DONNÉES ---
 const db = mysql.createConnection({
-    host: 'localhost', user: 'root',
-    password: 'Quantum_Ridge#91&', // Ton mot de passe exact
+    host: 'localhost', 
+    user: 'root',
+    password: 'Quantum_Ridge#91&', 
     database: 'intranet_db'
 });
 
@@ -24,13 +35,14 @@ db.connect(err => {
     else console.log('✅ BDD Connectée avec succès !');
 });
 
-// --- 3. FONCTION UTILITAIRE (Pour éviter les crashs) ---
-// Cette fonction permet d'envoyer les infos de l'utilisateur à chaque page
-const getUser = (role) => {
-    if (role === 'admin') return { prenom: 'Amine', nom: 'Alaoui', role: 'admin' };
-    return { prenom: 'Sara', nom: 'Test', role: 'employe' };
+// --- 3. MIDDLEWARE DE SÉCURITÉ (Protection des pages) ---
+// Si quelqu'un essaie d'aller sur le dashboard sans être connecté, on le renvoie au login
+const requireLogin = (req, res, next) => {
+    if (!req.session.user) {
+        return res.redirect('/login');
+    }
+    next();
 };
-
 
 // ===================================================
 //                 ROUTES (NAVIGATION)
@@ -38,33 +50,53 @@ const getUser = (role) => {
 
 // --> ACCUEIL & LOGIN
 app.get('/', (req, res) => res.redirect('/login'));
-app.get('/login', (req, res) => res.render('login'));
 
-// --> DASHBOARDS (Tableaux de bord)
-app.get('/admin-dashboard', (req, res) => {
-    res.render('admin', { user: getUser('admin'), nbTickets: 5, systemStatus: 'Opérationnel' });
+app.get('/login', (req, res) => {
+    // Si déjà connecté, on redirige direct vers le bon dashboard
+    if (req.session.user) {
+        if (req.session.user.role === 'admin') return res.redirect('/admin-dashboard');
+        return res.redirect('/employe-dashboard');
+    }
+    res.render('login');
 });
 
-app.get('/employe-dashboard', (req, res) => {
-    res.render('index', { user: getUser('employe'), nbTickets: 3, annonces: [] });
+// --> DASHBOARD EMPLOYÉ (Ton fichier index.html qui est maintenant index.ejs)
+app.get('/employe-dashboard', requireLogin, (req, res) => {
+    // Ici, req.session.user contient les vraies infos de la BDD (ex: Soukaina)
+    
+    // NOTE : Pour l'instant je mets des chiffres fictifs pour tickets et congés
+    // Plus tard, tu pourras faire des requêtes SQL ici pour avoir les vrais chiffres.
+    res.render('index', { 
+        user: req.session.user, 
+        soldeConges: 18,     // Tu pourras remplacer ça par une requête SQL plus tard
+        nbTickets: 2, 
+        nbDemandesRH: 1,
+        nbNotifs: 3,
+        annonces: [] 
+    });
 });
 
-// --> PAGES DU MENU (Barre latérale)
-// Note: On pointe vers le nom du fichier EJS sans l'extension
-app.get('/services', (req, res) => res.render('services', { user: getUser('employe') }));
-app.get('/documents', (req, res) => res.render('documents', { user: getUser('employe') }));
-app.get('/departements', (req, res) => res.render('departements', { user: getUser('employe') }));
-app.get('/applications', (req, res) => res.render('applications', { user: getUser('employe') }));
-app.get('/apropos', (req, res) => res.render('apropos', { user: getUser('employe') }));
+// --> DASHBOARD ADMIN
+app.get('/admin-dashboard', requireLogin, (req, res) => {
+    if (req.session.user.role !== 'admin') return res.redirect('/employe-dashboard');
+    res.render('admin', { user: req.session.user, nbTickets: 5, systemStatus: 'Opérationnel' });
+});
 
-// --> SOUS-PAGES DU CATALOGUE SERVICES
-// Je me base sur ta liste de fichiers dans l'image envoyée
-app.get('/services/restauration', (req, res) => res.render('restauration', { user: getUser('employe') }));
-app.get('/services/maintenance', (req, res) => res.render('maintenance', { user: getUser('employe') }));
-app.get('/services/rh', (req, res) => res.render('rh', { user: getUser('employe') }));
-app.get('/services/auto', (req, res) => res.render('auto', { user: getUser('employe') }));
-app.get('/services/salles', (req, res) => res.render('salles', { user: getUser('employe') }));
-app.get('/services/support', (req, res) => res.render('support', { user: getUser('employe') }));
+// --> PAGES DU MENU (On utilise requireLogin pour protéger)
+// On passe 'req.session.user' pour que le nom s'affiche aussi sur ces pages
+app.get('/services', requireLogin, (req, res) => res.render('services', { user: req.session.user }));
+app.get('/documents', requireLogin, (req, res) => res.render('documents', { user: req.session.user }));
+app.get('/departements', requireLogin, (req, res) => res.render('departements', { user: req.session.user }));
+app.get('/applications', requireLogin, (req, res) => res.render('applications', { user: req.session.user }));
+app.get('/apropos', requireLogin, (req, res) => res.render('apropos', { user: req.session.user }));
+
+// --> SOUS-PAGES SERVICES
+app.get('/services/restauration', requireLogin, (req, res) => res.render('restauration', { user: req.session.user }));
+app.get('/services/maintenance', requireLogin, (req, res) => res.render('maintenance', { user: req.session.user }));
+app.get('/services/rh', requireLogin, (req, res) => res.render('rh', { user: req.session.user }));
+app.get('/services/auto', requireLogin, (req, res) => res.render('auto', { user: req.session.user }));
+app.get('/services/salles', requireLogin, (req, res) => res.render('salles', { user: req.session.user }));
+app.get('/services/support', requireLogin, (req, res) => res.render('support', { user: req.session.user }));
 
 
 // ===================================================
@@ -72,25 +104,30 @@ app.get('/services/support', (req, res) => res.render('support', { user: getUser
 // ===================================================
 app.post('/login', (req, res) => {
     const { email, password } = req.body;
-    console.log(`Tentative de connexion : ${email}`);
-
+    
+    // Requête pour vérifier l'utilisateur
     const query = 'SELECT * FROM employe WHERE email = ? AND mot_de_passe = ?';
 
     db.query(query, [email, password], (err, results) => {
         if (err) {
             console.error(err);
-            return res.json({ success: false, message: "Erreur serveur" });
+            return res.json({ success: false, message: "Erreur serveur BDD" });
         }
 
         if (results.length > 0) {
-            const user = results[0];
-            console.log(`Connexion réussie : ${user.prenom} (${user.role})`);
+            // L'utilisateur existe !
+            const utilisateurTrouve = results[0];
+            
+            // SUPER IMPORTANT : On sauvegarde l'utilisateur dans la SESSION
+            req.session.user = utilisateurTrouve;
+            
+            console.log(`✅ Connexion réussie : ${utilisateurTrouve.prenom} ${utilisateurTrouve.nom}`);
 
-            // C'est ICI qu'on décide où ils vont
-            if (user.role === 'admin') {
-                res.json({ success: true, redirect: '/admin-dashboard', user: user });
+            // On renvoie la redirection au Front-End (fetch en JS)
+            if (utilisateurTrouve.role === 'admin') {
+                res.json({ success: true, redirect: '/admin-dashboard' });
             } else {
-                res.json({ success: true, redirect: '/employe-dashboard', user: user });
+                res.json({ success: true, redirect: '/employe-dashboard' });
             }
         } else {
             res.json({ success: false, message: "Email ou mot de passe incorrect" });
@@ -98,7 +135,13 @@ app.post('/login', (req, res) => {
     });
 });
 
-app.get('/logout', (req, res) => res.redirect('/login'));
+// --> DÉCONNEXION
+app.get('/logout', (req, res) => {
+    req.session.destroy((err) => {
+        if (err) return console.log(err);
+        res.redirect('/login');
+    });
+});
 
 // Démarrage du serveur
 app.listen(port, () => {
