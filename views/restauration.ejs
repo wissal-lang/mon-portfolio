@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intranet - Restauration</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- CSS GLOBAL --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { display: flex; background-color: #f4f6f8; min-height: 100vh; }
+        
+        /* Sidebar */
+        .sidebar { width: 260px; background-color: #EAEAEA; display: flex; flex-direction: column; padding: 25px 0; height: 100vh; position: fixed; border-right: 1px solid #d1d1d1; }
+        .logo { text-align: center; font-size: 28px; font-weight: 800; color: #000; margin-bottom: 40px; }
+        .menu-items { list-style: none; flex-grow: 1; }
+        /* Alignement du menu */
+        .menu-items a { display: flex; justify-content: flex-start; gap: 15px; align-items: center; padding: 12px 30px; text-decoration: none; color: #333; font-size: 15px; font-weight: 500; transition: 0.3s; }
+        .menu-items a:hover { background-color: #d6d6d6; color: #000; }
+        
+        .logout-item { margin-top: auto; margin-bottom: 20px; }
+        
+        .main-content { margin-left: 260px; padding: 50px; width: 100%; }
+
+        /* --- CSS SPÉCIFIQUE RESTAURATION --- */
+        .resto-container { display: flex; gap: 30px; flex-wrap: wrap; }
+        
+        /* Carte Menu */
+        .menu-card { flex: 2; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .menu-section { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px dashed #ddd; }
+        .menu-section:last-child { border-bottom: none; }
+        .menu-section h3 { color: #d35400; font-size: 18px; margin-bottom: 5px; }
+        .menu-item { display: flex; justify-content: space-between; font-weight: 500; }
+        .price { color: #666; }
+
+        /* Carte Badge */
+        .badge-card { flex: 1; background: #333; color: white; padding: 30px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); height: fit-content; }
+        .solde { font-size: 36px; font-weight: bold; margin: 15px 0; color: #2ecc71; }
+        .input-recharge { width: 100%; padding: 10px; border-radius: 5px; border: none; margin-bottom: 10px; }
+        .btn-recharge { width: 100%; background-color: #2ecc71; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-recharge:hover { background-color: #27ae60; }
+        
+        /* Bouton Retour */
+        .back-link { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 20px; color: #666; text-decoration: none; font-weight: bold; }
+        .back-link:hover { color: #000; }
+    </style>
+</head>
+<body>
+
+    <nav class="sidebar">
+        <div class="logo">ENTREPRISE</div>
+        <ul class="menu-items">
+            <li><a href="/employe-dashboard"><i class="fas fa-home"></i> Tableau de bord</a></li>
+            <li><a href="/services"><i class="fas fa-concierge-bell"></i> Mes Services</a></li>
+            <li><a href="/documents"><i class="fas fa-file-alt"></i> Documents</a></li>
+            <li><a href="/departements"><i class="fas fa-building"></i> Départements</a></li>
+            <li><a href="/applications"><i class="fas fa-laptop-code"></i> Applications</a></li>
+            <li><a href="/apropos"><i class="fas fa-info-circle"></i> À propos</a></li>
+            
+            <li class="logout-item">
+                <a href="/logout" style="color: #c0392b;">
+                    <i class="fas fa-sign-out-alt"></i> Déconnexion
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <a href="/services" class="back-link"><i class="fas fa-arrow-left"></i> Retour aux services</a>
+        
+        <h1>Restauration d'Entreprise</h1>
+        <p style="margin-bottom: 30px; color: #666;">Menu du jour et solde de votre badge.</p>
+        
+        <div class="resto-container">
+            <div class="menu-card">
+                <h2 style="margin-bottom: 20px;"><i class="fas fa-utensils"></i> Menu du Jour</h2>
+                
+                <div class="menu-section">
+                    <h3>Entrées</h3>
+                    <div class="menu-item"><span>Salade César</span> <span class="price">3.50€</span></div>
+                    <div class="menu-item"><span>Soupe de Potiron</span> <span class="price">2.80€</span></div>
+                </div>
+
+                <div class="menu-section">
+                    <h3>Plats</h3>
+                    <div class="menu-item"><span>Steak Haché & Frites</span> <span class="price">6.50€</span></div>
+                    <div class="menu-item"><span>Poisson du jour & Riz</span> <span class="price">7.20€</span></div>
+                    <div class="menu-item"><span>Lasagnes Végétariennes</span> <span class="price">6.00€</span></div>
+                </div>
+
+                <div class="menu-section">
+                    <h3>Desserts</h3>
+                    <div class="menu-item"><span>Mousse au Chocolat</span> <span class="price">2.50€</span></div>
+                    <div class="menu-item"><span>Tarte aux Pommes</span> <span class="price">2.80€</span></div>
+                    <div class="menu-item"><span>Fruit de saison</span> <span class="price">1.00€</span></div>
+                </div>
+            </div>
+
+            <div class="badge-card">
+                <h3>Mon Solde</h3>
+                <p>Badge N° 849302</p>
+                <div class="solde">12.50 €</div>
+                
+                <hr style="border: 0; border-top: 1px solid #555; margin: 20px 0;">
+                
+                <label style="display:block; margin-bottom:5px;">Montant à recharger</label>
+                <input type="number" class="input-recharge" placeholder="Ex: 20€">
+                <button class="btn-recharge" onclick="alert('Redirection vers le paiement bancaire...')">Recharger</button>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

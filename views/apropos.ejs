@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intranet - À Propos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- CSS GLOBAL --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { display: flex; background-color: #f4f6f8; min-height: 100vh; }
+        
+        /* Sidebar */
+        .sidebar { width: 260px; background-color: #EAEAEA; display: flex; flex-direction: column; padding: 25px 0; height: 100vh; position: fixed; border-right: 1px solid #d1d1d1; }
+        .logo { text-align: center; font-size: 28px; font-weight: 800; color: #000; margin-bottom: 40px; }
+        .menu-items { list-style: none; flex-grow: 1; }
+        /* Alignement corrigé */
+        .menu-items a { display: flex; justify-content: flex-start; gap: 15px; align-items: center; padding: 12px 30px; text-decoration: none; color: #333; font-size: 15px; font-weight: 500; transition: 0.3s; }
+        .menu-items a:hover { background-color: #d6d6d6; color: #000; }
+        .menu-items li.active a { background-color: #d1d1d1; font-weight: 700; border-left: 4px solid #333; }
+        
+        .main-content { margin-left: 260px; padding: 50px; width: 100%; }
+
+        /* --- CSS SPÉCIFIQUE À PROPOS --- */
+        .about-card {
+            background: white; padding: 40px; border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); max-width: 800px;
+        }
+        .about-card h2 { margin-bottom: 20px; color: #333; }
+        .about-card p { line-height: 1.6; color: #555; margin-bottom: 15px; }
+        
+        .logout-item { margin-top: auto; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+    <nav class="sidebar">
+        <div class="logo">ENTREPRISE</div>
+        <ul class="menu-items">
+            <li><a href="/employe-dashboard"><i class="fas fa-home"></i> Tableau de bord</a></li>
+            <li><a href="/services"><i class="fas fa-concierge-bell"></i> Mes Services</a></li>
+            <li><a href="/documents"><i class="fas fa-file-alt"></i> Documents</a></li>
+            <li><a href="/departements"><i class="fas fa-building"></i> Départements</a></li>
+            <li><a href="/applications"><i class="fas fa-laptop-code"></i> Applications</a></li>
+            <li class="active"><a href="/apropos"><i class="fas fa-info-circle"></i> À propos</a></li>
+            
+            <li class="logout-item">
+                <a href="/logout" style="color: #c0392b;">
+                    <i class="fas fa-sign-out-alt"></i> Déconnexion
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <h1>À propos de l'Intranet</h1>
+        
+        <div class="about-card">
+            <h2>Version 1.0</h2>
+            <p>Cet intranet a été conçu pour faciliter la communication interne et l'accès aux ressources de l'entreprise.</p>
+            <p>En cas de problème technique, veuillez contacter le support via la rubrique <strong>Mes Services > Support Informatique</strong>.</p>
+            
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+            
+            <p style="font-size: 12px; color: #999;">© 2026 Entreprise S.A. - Tous droits réservés.</p>
+        </div>
+    </main>
+
+</body>
+</html>
