@@ -76,7 +76,7 @@ app.get('/employe-dashboard', (req, res) => {
     });
 
     // Récupérer les annonces depuis la base de données
-    const queryAnnonces = 'SELECT * FROM annonces ORDER BY date_publication DESC';
+    const queryAnnonces = 'SELECT * FROM annonce ORDER BY date_publication DESC';
     
     db.query(queryAnnonces, (err, annonces) => {
         if (err) {

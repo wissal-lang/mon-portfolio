@@ -65,8 +65,14 @@
             <% annonces.forEach(function(annonce) { %>
                 <div class="news-card">
                     <div class="news-title"><%= annonce.titre %></div>
-                    <p><%= annonce.message %></p>
-                    <span class="news-date"><%= new Date(annonce.date_publication).toLocaleDateString('fr-FR') %></span>
+                    <p style="margin: 10px 0; color: #555; line-height: 1.6;"><%= annonce.message %></p>
+                    <span class="news-date">Publié le <%= new Date(annonce.date_publication).toLocaleDateString('fr-FR', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }) %></span>
                 </div>
             <% }); %>
         <% } else { %>
