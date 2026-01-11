@@ -15,7 +15,6 @@
         
         .menu-items { list-style: none; flex-grow: 1; }
         .menu-items li { cursor: pointer; } 
-        /* Important : pointer-events: none sur le lien pour que le clic soit géré par le li */
         .menu-items a { display: flex; align-items: center; padding: 12px 30px; text-decoration: none; color: #333; font-size: 15px; font-weight: 500; transition: 0.3s; gap: 15px; pointer-events: none; }
         
         .menu-items li:hover { background-color: #d6d6d6; }
@@ -53,10 +52,13 @@
         
         .status-badge { padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
         .badge-pending { background: #fff3cd; color: #856404; }
+        .badge-approved { background: #d4edda; color: #155724; }
+        .badge-rejected { background: #fadbd8; color: #c0392b; }
         .badge-active { background: #d4edda; color: #155724; }
-        .badge-high { background: #fadbd8; color: #c0392b; }
+        .badge-inactive { background: #e2e3e5; color: #383d41; }
+        .badge-high { background: #f8d7da; color: #721c24; }
 
-        .btn-action { padding: 6px 10px; border: none; border-radius: 5px; cursor: pointer; color: white; margin-right: 5px; transition: 0.2s; }
+        .btn-action { padding: 6px 12px; border: none; border-radius: 5px; cursor: pointer; color: white; margin-right: 5px; transition: 0.2s; font-size: 12px; }
         .btn-valid { background-color: #27ae60; }
         .btn-refuse { background-color: #e74c3c; }
         .btn-edit { background-color: #f39c12; }
@@ -64,25 +66,30 @@
         .btn-action:hover { opacity: 0.8; }
 
         .btn-primary { background: #2c3e50; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-size: 14px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-primary:hover { background: #1a252f; }
         
         .avatar-circle { width: 35px; height: 35px; background: #3498db; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; margin-right: 10px; }
         .user-flex { display: flex; align-items: center; }
+
+        /* Formulaire ajout employé */
+        .form-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .form-modal.active { display: flex; align-items: center; justify-content: center; }
+        .form-content { background: white; padding: 30px; border-radius: 10px; width: 500px; max-width: 90%; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
     </style>
 </head>
 <body>
 
     <% 
-        // --- BLOC DE SÉCURITÉ ---
-        // Cette façon d'écrire empêche les erreurs "Variable not defined"
-        var finalStatus = (typeof user !== 'undefined' && user.systemStatus) ? user.systemStatus : 'Opérationnel';
+        var finalStatus = (typeof user !== 'undefined' && user && user.systemStatus) ? user.systemStatus : 'Opérationnel';
         var itColor = (finalStatus === 'Panne') ? '#c0392b' : '#27ae60'; 
-        
-        // Si nbTickets n'est pas envoyé, on met 0 par défaut
         var ticketCount = (typeof nbTickets !== 'undefined') ? nbTickets : 0;
-        
-        // Si user n'est pas envoyé, on met des infos bidons pour ne pas planter
-        var prenom = (typeof user !== 'undefined' && user.prenom) ? user.prenom : 'Admin';
-        var nom = (typeof user !== 'undefined' && user.nom) ? user.nom : '';
+        var prenom = (typeof user !== 'undefined' && user && user.prenom) ? user.prenom : 'Admin';
+        var nom = (typeof user !== 'undefined' && user && user.nom) ? user.nom : '';
+        var employes = (typeof employes !== 'undefined') ? employes : [];
+        var conges = (typeof conges !== 'undefined') ? conges : [];
     %>
 
     <nav class="sidebar">
@@ -109,6 +116,7 @@
 
     <main class="main-content">
         
+        <!-- SECTION DASHBOARD -->
         <div id="dashboard" class="content-section active">
             <div class="section-header">
                 <div>
@@ -120,4 +128,356 @@
             <div class="stats-grid">
                 <div class="stat-card" style="border-bottom-color: #3498db;">
                     <div class="stat-icon" style="background-color: #3498db;"><i class="fas fa-envelope"></i></div>
-                    <div class="stat-info"><h3><%= ticketCount %></h3><p>Tickets IT Ouverts
+                    <div class="stat-info"><h3><%= ticketCount %></h3><p>Tickets IT Ouverts</p></div>
+                </div>
+                <div class="stat-card" style="border-bottom-color: #27ae60;">
+                    <div class="stat-icon" style="background-color: #27ae60;"><i class="fas fa-users"></i></div>
+                    <div class="stat-info"><h3><%= typeof nbEmployes !== 'undefined' ? nbEmployes : 0 %></h3><p>Employés Actifs</p></div>
+                </div>
+                <div class="stat-card" style="border-bottom-color: #f39c12;">
+                    <div class="stat-icon" style="background-color: #f39c12;"><i class="fas fa-clock"></i></div>
+                    <div class="stat-info"><h3><%= typeof nbConges !== 'undefined' ? nbConges : 0 %></h3><p>Congés en Attente</p></div>
+                </div>
+                <div class="stat-card" style="border-bottom-color: <%= itColor %>;">
+                    <div class="stat-icon" style="background-color: <%= itColor %>;"><i class="fas fa-server"></i></div>
+                    <div class="stat-info"><h3><%= finalStatus %></h3><p>Statut Système</p></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION GÉRER EMPLOYÉS -->
+        <div id="employees" class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">Gérer les Employés</h2>
+                <button class="btn-primary" onclick="openAddEmployeeModal()"><i class="fas fa-plus"></i> Ajouter un Employé</button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nom</th>
+                            <th>Prénom</th>
+                            <th>Email</th>
+                            <th>Rôle</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="employees-table-body">
+                        <% if (typeof employes !== 'undefined' && employes.length > 0) { %>
+                            <% employes.forEach(function(emp) { %>
+                                <tr>
+                                    <td><%= emp.id_employe %></td>
+                                    <td><%= emp.nom %></td>
+                                    <td><%= emp.prenom %></td>
+                                    <td><%= emp.email %></td>
+                                    <td><span class="status-badge <%= emp.role === 'admin' ? 'badge-active' : 'badge-pending' %>"><%= emp.role || 'employe' %></span></td>
+                                    <td><span class="status-badge badge-active">Actif</span></td>
+                                    <td>
+                                        <button class="btn-action btn-edit" onclick="editEmployee(<%= emp.id_employe %>)"><i class="fas fa-edit"></i></button>
+                                        <button class="btn-action btn-delete" onclick="deleteEmployee(<%= emp.id_employe %>)"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 40px; color: #999;">Aucun employé trouvé. Cliquez sur "Ajouter un Employé" pour commencer.</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SECTION VALIDATIONS (CONGÉS) -->
+        <div id="validations" class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">Validations des Congés</h2>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Employé</th>
+                            <th>Type</th>
+                            <th>Date Début</th>
+                            <th>Date Fin</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="conges-table-body">
+                        <% if (typeof conges !== 'undefined' && conges.length > 0) { %>
+                            <% conges.forEach(function(conge) { %>
+                                <tr>
+                                    <td><%= conge.id_conge || 'N/A' %></td>
+                                    <td><%= conge.prenom_employe || 'N/A' %> <%= conge.nom_employe || '' %></td>
+                                    <td><%= conge.type || 'Congés Payés' %></td>
+                                    <td><%= conge.date_debut ? new Date(conge.date_debut).toLocaleDateString('fr-FR') : 'N/A' %></td>
+                                    <td><%= conge.date_fin ? new Date(conge.date_fin).toLocaleDateString('fr-FR') : 'N/A' %></td>
+                                    <td>
+                                        <span class="status-badge <%= conge.statut === 'approuve' ? 'badge-approved' : (conge.statut === 'refuse' ? 'badge-rejected' : 'badge-pending') %>">
+                                            <%= conge.statut === 'approuve' ? 'Approuvé' : (conge.statut === 'refuse' ? 'Refusé' : 'En Attente') %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <% if (!conge.statut || conge.statut === 'en_attente') { %>
+                                            <button class="btn-action btn-valid" onclick="validerConge(<%= conge.id_conge || 0 %>)"><i class="fas fa-check"></i> Approuver</button>
+                                            <button class="btn-action btn-refuse" onclick="refuserConge(<%= conge.id_conge || 0 %>)"><i class="fas fa-times"></i> Refuser</button>
+                                        <% } else { %>
+                                            <span style="color: #999; font-size: 12px;">Traité</span>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 40px; color: #999;">Aucune demande de congé en attente.</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SECTION STATUT IT -->
+        <div id="it-status" class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">Statut IT</h2>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card" style="border-bottom-color: <%= itColor %>;">
+                    <div class="stat-icon" style="background-color: <%= itColor %>;"><i class="fas fa-server"></i></div>
+                    <div class="stat-info">
+                        <h3><%= finalStatus %></h3>
+                        <p>Serveur Principal</p>
+                    </div>
+                </div>
+                <div class="stat-card" style="border-bottom-color: #27ae60;">
+                    <div class="stat-icon" style="background-color: #27ae60;"><i class="fas fa-database"></i></div>
+                    <div class="stat-info">
+                        <h3>Opérationnel</h3>
+                        <p>Base de Données</p>
+                    </div>
+                </div>
+                <div class="stat-card" style="border-bottom-color: #27ae60;">
+                    <div class="stat-icon" style="background-color: #27ae60;"><i class="fas fa-network-wired"></i></div>
+                    <div class="stat-info">
+                        <h3>Connecté</h3>
+                        <p>Réseau</p>
+                    </div>
+                </div>
+                <div class="stat-card" style="border-bottom-color: #3498db;">
+                    <div class="stat-icon" style="background-color: #3498db;"><i class="fas fa-envelope"></i></div>
+                    <div class="stat-info">
+                        <h3><%= ticketCount %></h3>
+                        <p>Tickets Ouverts</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-container" style="margin-top: 30px;">
+                <h3 style="margin-bottom: 20px; color: #333;">Tickets IT Récents</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Titre</th>
+                            <th>Priorité</th>
+                            <th>Statut</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>#001</td>
+                            <td>Problème d'accès réseau</td>
+                            <td><span class="status-badge badge-high">Haute</span></td>
+                            <td><span class="status-badge badge-pending">En cours</span></td>
+                            <td>10/01/2024</td>
+                        </tr>
+                        <tr>
+                            <td>#002</td>
+                            <td>Mise à jour logiciel</td>
+                            <td><span class="status-badge badge-pending">Moyenne</span></td>
+                            <td><span class="status-badge badge-approved">Résolu</span></td>
+                            <td>08/01/2024</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL AJOUT EMPLOYÉ -->
+    <div id="employeeModal" class="form-modal" onclick="if(event.target === this) closeAddEmployeeModal()">
+        <div class="form-content">
+            <h2 style="margin-bottom: 20px;">Ajouter un Employé</h2>
+            <form id="employeeForm" onsubmit="addEmployee(event)">
+                <div class="form-group">
+                    <label>Prénom</label>
+                    <input type="text" name="prenom" required>
+                </div>
+                <div class="form-group">
+                    <label>Nom</label>
+                    <input type="text" name="nom" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Mot de passe</label>
+                    <input type="password" name="mot_de_passe" required>
+                </div>
+                <div class="form-group">
+                    <label>Rôle</label>
+                    <select name="role" required>
+                        <option value="employe">Employé</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                    <button type="button" class="btn-action btn-refuse" onclick="closeAddEmployeeModal()">Annuler</button>
+                    <button type="submit" class="btn-action btn-valid">Ajouter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Fonction pour basculer entre les onglets
+        function switchTab(tabId, element) {
+            // Masquer toutes les sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Afficher la section sélectionnée
+            const selectedSection = document.getElementById(tabId);
+            if (selectedSection) {
+                selectedSection.classList.add('active');
+            }
+            
+            // Retirer la classe active de tous les éléments du menu
+            document.querySelectorAll('.menu-items li').forEach(li => {
+                li.classList.remove('active');
+            });
+            
+            // Ajouter la classe active à l'élément cliqué
+            if (element) {
+                element.classList.add('active');
+            }
+        }
+
+        // Modal Ajout Employé
+        function openAddEmployeeModal() {
+            document.getElementById('employeeModal').classList.add('active');
+        }
+
+        function closeAddEmployeeModal() {
+            document.getElementById('employeeModal').classList.remove('active');
+            document.getElementById('employeeForm').reset();
+        }
+
+        function addEmployee(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData);
+            
+            // Ici, vous pouvez envoyer les données au serveur via fetch
+            fetch('/admin/employees/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert('Employé ajouté avec succès !');
+                    location.reload();
+                } else {
+                    alert('Erreur : ' + result.message);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Erreur lors de l\'ajout de l\'employé');
+            });
+        }
+
+        function editEmployee(id) {
+            alert('Modifier l\'employé #' + id + ' (Fonctionnalité à implémenter)');
+        }
+
+        function deleteEmployee(id) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')) {
+                fetch('/admin/employees/delete/' + id, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        alert('Employé supprimé avec succès !');
+                        location.reload();
+                    } else {
+                        alert('Erreur : ' + result.message);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Erreur lors de la suppression');
+                });
+            }
+        }
+
+        function validerConge(id) {
+            if (confirm('Approuver cette demande de congé ?')) {
+                fetch('/admin/conges/valider/' + id, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        alert('Congé approuvé !');
+                        location.reload();
+                    } else {
+                        alert('Erreur : ' + result.message);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Erreur lors de la validation');
+                });
+            }
+        }
+
+        function refuserConge(id) {
+            if (confirm('Refuser cette demande de congé ?')) {
+                fetch('/admin/conges/refuser/' + id, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        alert('Congé refusé.');
+                        location.reload();
+                    } else {
+                        alert('Erreur : ' + result.message);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Erreur lors du refus');
+                });
+            }
+        }
+    </script>
+</body>
+</html>
