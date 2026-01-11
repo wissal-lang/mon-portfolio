@@ -26,10 +26,25 @@
         .main-content { margin-left: 260px; padding: 50px; width: 100%; }
 
         /* ACTUALITÉS */
-        .section-title { margin-bottom: 20px; font-size: 20px; border-left: 5px solid #333; padding-left: 10px; }
-        .news-card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        .news-title { font-weight: bold; font-size: 16px; margin-bottom: 5px; }
-        .news-date { font-size: 12px; color: #999; }
+        .section-title { margin-bottom: 20px; font-size: 20px; border-left: 5px solid #3498db; padding-left: 10px; color: #2c3e50; }
+        
+        .news-card { 
+            background: white; 
+            border-radius: 8px; 
+            padding: 20px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+            margin-bottom: 20px; 
+            border-left: 4px solid #f39c12; /* Bordure orange pour faire ressortir l'info */
+            transition: transform 0.2s;
+        }
+        .news-card:hover { transform: translateY(-2px); }
+
+        .news-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .news-title { font-weight: bold; font-size: 18px; color: #2c3e50; }
+        .news-date { font-size: 13px; color: #7f8c8d; display: flex; align-items: center; gap: 5px; }
+        
+        /* Important pour garder les paragraphes du message */
+        .news-content { color: #555; line-height: 1.6; white-space: pre-line; }
     </style>
 </head>
 <body>
@@ -59,24 +74,28 @@
             <p style="color: #666; margin-top: 5px;">Bienvenue sur votre espace intranet<%= (typeof user !== 'undefined' && user && user.nom) ? ', ' + user.nom : '' %>.</p>
         </div>
 
-        <h2 class="section-title">Actualités</h2>
+        <h2 class="section-title"><i class="fas fa-bullhorn"></i> Actualités & Annonces</h2>
         
         <% if(typeof annonces != 'undefined' && annonces && annonces.length > 0) { %>
             <% annonces.forEach(function(annonce) { %>
                 <div class="news-card">
-                    <div class="news-title"><%= annonce.titre %></div>
-                    <p style="margin: 10px 0; color: #555; line-height: 1.6;"><%= annonce.message %></p>
-                    <span class="news-date">Publié le <%= new Date(annonce.date_publication).toLocaleDateString('fr-FR', { 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    }) %></span>
+                    <div class="news-header">
+                        <div class="news-title"><%= annonce.titre %></div>
+                        <span class="news-date">
+                            <i class="far fa-clock"></i>
+                            <%= new Date(annonce.date_publication).toLocaleDateString('fr-FR', { 
+                                day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' 
+                            }) %>
+                        </span>
+                    </div>
+                    <p class="news-content"><%= annonce.message %></p>
                 </div>
             <% }); %>
         <% } else { %>
-            <p style="color: #666; font-style: italic;">Aucune nouvelle actualité.</p>
+            <div style="text-align: center; padding: 40px; background: white; border-radius: 8px; color: #999;">
+                <i class="fas fa-inbox" style="font-size: 30px; margin-bottom: 10px; display: block;"></i>
+                <p>Aucune nouvelle actualité pour le moment.</p>
+            </div>
         <% } %>
 
     </main>

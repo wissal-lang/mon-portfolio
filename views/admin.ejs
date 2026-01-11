@@ -71,13 +71,15 @@
         .avatar-circle { width: 35px; height: 35px; background: #3498db; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; margin-right: 10px; }
         .user-flex { display: flex; align-items: center; }
 
-        /* Formulaire ajout employé */
+        /* Formulaire ajout employé & Annonce */
         .form-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
         .form-modal.active { display: flex; align-items: center; justify-content: center; }
         .form-content { background: white; padding: 30px; border-radius: 10px; width: 500px; max-width: 90%; }
         .form-group { margin-bottom: 20px; }
         .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
+        /* J'ai ajouté textarea ici pour le style */
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
+        .form-group textarea { height: 100px; resize: vertical; }
     </style>
 </head>
 <body>
@@ -87,6 +89,7 @@
         var nom = (typeof user !== 'undefined' && user && user.nom) ? user.nom : '';
         var employes = (typeof employes !== 'undefined') ? employes : [];
         var conges = (typeof conges !== 'undefined') ? conges : [];
+        var nbConges = (typeof nbConges !== 'undefined') ? nbConges : 0;
     %>
 
     <nav class="sidebar">
@@ -110,7 +113,6 @@
 
     <main class="main-content">
         
-        <!-- SECTION DASHBOARD -->
         <div id="dashboard" class="content-section active">
             <div class="section-header">
                 <div>
@@ -122,12 +124,27 @@
             <div class="stats-grid">
                 <div class="stat-card" style="border-bottom-color: #f39c12;">
                     <div class="stat-icon" style="background-color: #f39c12;"><i class="fas fa-clock"></i></div>
-                    <div class="stat-info"><h3><%= typeof nbConges !== 'undefined' ? nbConges : 0 %></h3><p>Congés en Attente</p></div>
+                    <div class="stat-info"><h3><%= nbConges %></h3><p>Congés en Attente</p></div>
                 </div>
+                <div class="stat-card" style="border-bottom-color: #3498db;">
+                    <div class="stat-icon" style="background-color: #3498db;"><i class="fas fa-users"></i></div>
+                    <div class="stat-info"><h3><%= employes.length %></h3><p>Employés Total</p></div>
+                </div>
+            </div>
+
+            <div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-top: 30px;">
+                <div class="section-header" style="margin-bottom: 15px;">
+                    <h2 style="font-size: 20px;"><i class="fas fa-bullhorn" style="margin-right: 10px; color: #2c3e50;"></i>Communication Interne</h2>
+                    <button class="btn-primary" onclick="openAnnonceModal()">
+                        <i class="fas fa-paper-plane"></i> Publier une annonce
+                    </button>
+                </div>
+                <p style="color: #666; font-size: 14px;">
+                    Diffuser une nouvelle importante sur le tableau de bord des employés.
+                </p>
             </div>
         </div>
 
-        <!-- SECTION GÉRER EMPLOYÉS -->
         <div id="employees" class="content-section">
             <div class="section-header">
                 <h2 class="section-title">Gérer les Employés</h2>
@@ -138,13 +155,7 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Nom</th>
-                            <th>Prénom</th>
-                            <th>Email</th>
-                            <th>Rôle</th>
-                            <th>Statut</th>
-                            <th>Actions</th>
+                            <th>ID</th><th>Nom</th><th>Prénom</th><th>Email</th><th>Rôle</th><th>Statut</th><th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="employees-table-body">
@@ -164,16 +175,13 @@
                                 </tr>
                             <% }); %>
                         <% } else { %>
-                            <tr>
-                                <td colspan="7" style="text-align: center; padding: 40px; color: #999;">Aucun employé trouvé. Cliquez sur "Ajouter un Employé" pour commencer.</td>
-                            </tr>
+                            <tr><td colspan="7" style="text-align: center; padding: 40px; color: #999;">Aucun employé trouvé.</td></tr>
                         <% } %>
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- SECTION VALIDATIONS (CONGÉS) -->
         <div id="validations" class="content-section">
             <div class="section-header">
                 <h2 class="section-title">Validations des Congés</h2>
@@ -183,14 +191,7 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Employé</th>
-                            <th>Type</th>
-                            <th>Date Début</th>
-                            <th>Date Fin</th>
-                            <th>Date Demande</th>
-                            <th>Statut</th>
-                            <th>Actions</th>
+                            <th>ID</th><th>Employé</th><th>Type</th><th>Date Début</th><th>Date Fin</th><th>Date Demande</th><th>Statut</th><th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="conges-table-body">
@@ -219,39 +220,22 @@
                                 </tr>
                             <% }); %>
                         <% } else { %>
-                            <tr>
-                                <td colspan="8" style="text-align: center; padding: 40px; color: #999;">Aucune demande de congé trouvée.</td>
-                            </tr>
+                            <tr><td colspan="8" style="text-align: center; padding: 40px; color: #999;">Aucune demande de congé trouvée.</td></tr>
                         <% } %>
                     </tbody>
                 </table>
             </div>
         </div>
-
-
     </main>
 
-    <!-- MODAL AJOUT EMPLOYÉ -->
     <div id="employeeModal" class="form-modal" onclick="if(event.target === this) closeAddEmployeeModal()">
         <div class="form-content">
             <h2 style="margin-bottom: 20px;">Ajouter un Employé</h2>
             <form id="employeeForm" onsubmit="addEmployee(event)">
-                <div class="form-group">
-                    <label>Prénom</label>
-                    <input type="text" name="prenom" required>
-                </div>
-                <div class="form-group">
-                    <label>Nom</label>
-                    <input type="text" name="nom" required>
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" name="email" required>
-                </div>
-                <div class="form-group">
-                    <label>Mot de passe</label>
-                    <input type="password" name="mot_de_passe" required>
-                </div>
+                <div class="form-group"><label>Prénom</label><input type="text" name="prenom" required></div>
+                <div class="form-group"><label>Nom</label><input type="text" name="nom" required></div>
+                <div class="form-group"><label>Email</label><input type="email" name="email" required></div>
+                <div class="form-group"><label>Mot de passe</label><input type="password" name="mot_de_passe" required></div>
                 <div class="form-group">
                     <label>Rôle</label>
                     <select name="role" required>
@@ -267,155 +251,104 @@
         </div>
     </div>
 
+    <div id="annonceModal" class="form-modal" onclick="if(event.target === this) closeAnnonceModal()">
+        <div class="form-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                <h2>📢 Nouvelle Annonce</h2>
+                <i class="fas fa-times" style="cursor:pointer;" onclick="closeAnnonceModal()"></i>
+            </div>
+            
+            <form id="annonceForm" onsubmit="submitAnnonce(event)">
+                <div class="form-group">
+                    <label>Titre de l'annonce</label>
+                    <input type="text" name="titre" placeholder="Ex: Maintenance, Réunion..." required>
+                </div>
+                <div class="form-group">
+                    <label>Message</label>
+                    <textarea name="message" placeholder="Écrivez votre message ici..." required></textarea>
+                </div>
+                
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                    <button type="button" class="btn-action btn-refuse" onclick="closeAnnonceModal()">Annuler</button>
+                    <button type="submit" class="btn-action btn-valid"><i class="fas fa-paper-plane"></i> Publier</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         // Fonction pour basculer entre les onglets
         function switchTab(tabId, element) {
-            // Masquer toutes les sections
-            document.querySelectorAll('.content-section').forEach(section => {
-                section.classList.remove('active');
-            });
-            
-            // Afficher la section sélectionnée
+            document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
             const selectedSection = document.getElementById(tabId);
-            if (selectedSection) {
-                selectedSection.classList.add('active');
-            }
-            
-            // Retirer la classe active de tous les éléments du menu
-            document.querySelectorAll('.menu-items li').forEach(li => {
-                li.classList.remove('active');
-            });
-            
-            // Ajouter la classe active à l'élément cliqué
-            if (element) {
-                element.classList.add('active');
-            }
+            if (selectedSection) selectedSection.classList.add('active');
+            document.querySelectorAll('.menu-items li').forEach(li => li.classList.remove('active'));
+            if (element) element.classList.add('active');
         }
 
-        // Modal Ajout Employé
-        function openAddEmployeeModal() {
-            document.getElementById('employeeModal').classList.add('active');
-        }
-
-        function closeAddEmployeeModal() {
-            document.getElementById('employeeModal').classList.remove('active');
-            document.getElementById('employeeForm').reset();
-        }
+        // --- GESTION EMPLOYÉS ---
+        function openAddEmployeeModal() { document.getElementById('employeeModal').classList.add('active'); }
+        function closeAddEmployeeModal() { document.getElementById('employeeModal').classList.remove('active'); document.getElementById('employeeForm').reset(); }
 
         function addEmployee(event) {
             event.preventDefault();
             const formData = new FormData(event.target);
             const data = Object.fromEntries(formData);
-            
-            console.log('📝 Données à envoyer:', data);
-            
-            // Envoyer les données au serveur via fetch
             fetch('/admin/employees/add', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+            }).then(r => r.json()).then(res => {
+                if(res.success) { alert('✅ Ajouté !'); closeAddEmployeeModal(); location.reload(); }
+                else { alert('❌ Erreur : ' + res.message); }
+            });
+        }
+        function deleteEmployee(id) {
+            if(confirm('Supprimer ?')) fetch('/admin/employees/delete/' + id, {method: 'DELETE'}).then(r=>r.json()).then(res=>{ if(res.success) location.reload(); else alert(res.message); });
+        }
+        function editEmployee(id) { alert('À implémenter'); }
+
+        // --- GESTION CONGÉS ---
+        function validerConge(id) {
+            if(confirm('Valider ?')) fetch('/admin/conges/valider/'+id, {method:'POST'}).then(r=>r.json()).then(res => { if(res.success) location.reload(); });
+        }
+        function refuserConge(id) {
+            if(confirm('Refuser ?')) fetch('/admin/conges/refuser/'+id, {method:'POST'}).then(r=>r.json()).then(res => { if(res.success) location.reload(); });
+        }
+
+        // --- NOUVEAU : GESTION ANNONCES ---
+        function openAnnonceModal() {
+            document.getElementById('annonceModal').classList.add('active');
+        }
+
+        function closeAnnonceModal() {
+            document.getElementById('annonceModal').classList.remove('active');
+            document.getElementById('annonceForm').reset();
+        }
+
+        function submitAnnonce(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData);
+
+            fetch('/admin/annonces/add', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             })
-            .then(response => {
-                console.log('📡 Réponse reçue:', response.status);
-                if (!response.ok) {
-                    throw new Error('Erreur HTTP: ' + response.status);
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(result => {
-                console.log('✅ Résultat:', result);
                 if (result.success) {
-                    alert('✅ Employé ajouté avec succès !');
-                    closeAddEmployeeModal();
-                    location.reload();
+                    alert('✅ Annonce publiée avec succès !');
+                    closeAnnonceModal();
+                    // Pas besoin de recharger la page, l'annonce est pour les employés
                 } else {
                     alert('❌ Erreur : ' + result.message);
                 }
             })
             .catch(err => {
-                console.error('❌ Erreur:', err);
-                alert('❌ Erreur lors de l\'ajout de l\'employé. Vérifiez la console pour plus de détails.');
+                console.error(err);
+                alert('Erreur serveur');
             });
-        }
-
-        function editEmployee(id) {
-            alert('Modifier l\'employé #' + id + ' (Fonctionnalité à implémenter)');
-        }
-
-        function deleteEmployee(id) {
-            if (confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')) {
-                fetch('/admin/employees/delete/' + id, {
-                    method: 'DELETE'
-                })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.success) {
-                        alert('Employé supprimé avec succès !');
-                        location.reload();
-                    } else {
-                        alert('Erreur : ' + result.message);
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    alert('Erreur lors de la suppression');
-                });
-            }
-        }
-
-        function validerConge(id) {
-            if (!id || id === 0) {
-                alert('Erreur : ID de congé invalide');
-                return;
-            }
-            
-            if (confirm('Approuver cette demande de congé ?')) {
-                fetch('/admin/conges/valider/' + id, {
-                    method: 'POST'
-                })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.success) {
-                        alert('✅ Congé approuvé avec succès !');
-                        location.reload();
-                    } else {
-                        alert('❌ Erreur : ' + result.message);
-                    }
-                })
-                .catch(err => {
-                    console.error('Erreur:', err);
-                    alert('❌ Erreur lors de la validation. Veuillez réessayer.');
-                });
-            }
-        }
-
-        function refuserConge(id) {
-            if (!id || id === 0) {
-                alert('Erreur : ID de congé invalide');
-                return;
-            }
-            
-            if (confirm('Refuser cette demande de congé ?')) {
-                fetch('/admin/conges/refuser/' + id, {
-                    method: 'POST'
-                })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.success) {
-                        alert('✅ Congé refusé.');
-                        location.reload();
-                    } else {
-                        alert('❌ Erreur : ' + result.message);
-                    }
-                })
-                .catch(err => {
-                    console.error('Erreur:', err);
-                    alert('❌ Erreur lors du refus. Veuillez réessayer.');
-                });
-            }
         }
     </script>
 </body>
 </html>
-
-

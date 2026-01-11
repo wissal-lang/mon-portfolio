@@ -232,7 +232,35 @@ const requireAdmin = (req, res, next) => {
     next();
 };
 
-// --- AJOUTER UN EMPLOYÉ (CORRIGÉ AVEC id_role) ---
+// --- ROUTE POUR PUBLIER UNE ANNONCE (AJOUTÉE ICI) ---
+app.post('/admin/annonces/add', requireAdmin, (req, res) => {
+    // On récupère 'titre' et 'message' (les noms exacts de ta table)
+    const { titre, message } = req.body;
+    const user = req.session.user;
+
+    // Validation simple
+    if (!titre || !message) {
+        return res.json({ success: false, message: 'Le titre et le message sont requis' });
+    }
+
+    // Requête SQL adaptée à TA table : annonce
+    // On insère : titre, message, date_publication (NOW()), id_employe
+    const query = 'INSERT INTO annonce (titre, message, date_publication, id_employe) VALUES (?, ?, NOW(), ?)';
+    
+    db.query(query, [titre, message, user.id_employe], (err, result) => {
+        if (err) {
+            console.error('❌ Erreur ajout annonce:', err);
+            // On renvoie l'erreur SQL pour t'aider à débugger si besoin
+            return res.json({ success: false, message: 'Erreur SQL: ' + err.sqlMessage });
+        }
+        
+        console.log(`📢 Nouvelle annonce publiée par l'admin ${user.id_employe}`);
+        res.json({ success: true, message: 'Annonce publiée avec succès !' });
+    });
+});
+// ----------------------------------------------------
+
+// Ajouter un employé
 app.post('/admin/employees/add', requireAdmin, (req, res) => {
     const { prenom, nom, email, mot_de_passe, role } = req.body;
 
@@ -284,7 +312,6 @@ app.post('/admin/employees/add', requireAdmin, (req, res) => {
                 console.log(`✅ Employé ajouté: ${prenom} ${nom} (ID: ${result.insertId}, RoleID: ${id_role})`);
                 res.json({ success: true, message: 'Employé ajouté avec succès', id: result.insertId });
             });
-            // --- FIN CORRECTION ---
         });
     });
 });
