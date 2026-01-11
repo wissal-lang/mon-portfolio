@@ -83,9 +83,6 @@
 <body>
 
     <% 
-        var finalStatus = (typeof user !== 'undefined' && user && user.systemStatus) ? user.systemStatus : 'Opérationnel';
-        var itColor = (finalStatus === 'Panne') ? '#c0392b' : '#27ae60'; 
-        var ticketCount = (typeof nbTickets !== 'undefined') ? nbTickets : 0;
         var prenom = (typeof user !== 'undefined' && user && user.prenom) ? user.prenom : 'Admin';
         var nom = (typeof user !== 'undefined' && user && user.nom) ? user.nom : '';
         var employes = (typeof employes !== 'undefined') ? employes : [];
@@ -103,9 +100,6 @@
             </li>
             <li onclick="switchTab('validations', this)">
                 <a href="#"><i class="fas fa-check-circle"></i> Validations</a>
-            </li>
-            <li onclick="switchTab('it-status', this)">
-                <a href="#"><i class="fas fa-server"></i> Statut IT</a>
             </li>
             
             <li class="logout-item">
@@ -126,21 +120,9 @@
             </div>
 
             <div class="stats-grid">
-                <div class="stat-card" style="border-bottom-color: #3498db;">
-                    <div class="stat-icon" style="background-color: #3498db;"><i class="fas fa-envelope"></i></div>
-                    <div class="stat-info"><h3><%= ticketCount %></h3><p>Tickets IT Ouverts</p></div>
-                </div>
-                <div class="stat-card" style="border-bottom-color: #27ae60;">
-                    <div class="stat-icon" style="background-color: #27ae60;"><i class="fas fa-users"></i></div>
-                    <div class="stat-info"><h3><%= typeof nbEmployes !== 'undefined' ? nbEmployes : 0 %></h3><p>Employés Actifs</p></div>
-                </div>
                 <div class="stat-card" style="border-bottom-color: #f39c12;">
                     <div class="stat-icon" style="background-color: #f39c12;"><i class="fas fa-clock"></i></div>
                     <div class="stat-info"><h3><%= typeof nbConges !== 'undefined' ? nbConges : 0 %></h3><p>Congés en Attente</p></div>
-                </div>
-                <div class="stat-card" style="border-bottom-color: <%= itColor %>;">
-                    <div class="stat-icon" style="background-color: <%= itColor %>;"><i class="fas fa-server"></i></div>
-                    <div class="stat-info"><h3><%= finalStatus %></h3><p>Statut Système</p></div>
                 </div>
             </div>
         </div>
@@ -206,6 +188,7 @@
                             <th>Type</th>
                             <th>Date Début</th>
                             <th>Date Fin</th>
+                            <th>Date Demande</th>
                             <th>Statut</th>
                             <th>Actions</th>
                         </tr>
@@ -219,6 +202,7 @@
                                     <td><%= conge.type || 'Congés Payés' %></td>
                                     <td><%= conge.date_debut ? new Date(conge.date_debut).toLocaleDateString('fr-FR') : 'N/A' %></td>
                                     <td><%= conge.date_fin ? new Date(conge.date_fin).toLocaleDateString('fr-FR') : 'N/A' %></td>
+                                    <td><%= conge.date_demande ? new Date(conge.date_demande).toLocaleDateString('fr-FR') : (conge.date_debut ? new Date(conge.date_debut).toLocaleDateString('fr-FR') : 'N/A') %></td>
                                     <td>
                                         <span class="status-badge <%= conge.statut === 'approuve' ? 'badge-approved' : (conge.statut === 'refuse' ? 'badge-rejected' : 'badge-pending') %>">
                                             <%= conge.statut === 'approuve' ? 'Approuvé' : (conge.statut === 'refuse' ? 'Refusé' : 'En Attente') %>
@@ -236,7 +220,7 @@
                             <% }); %>
                         <% } else { %>
                             <tr>
-                                <td colspan="7" style="text-align: center; padding: 40px; color: #999;">Aucune demande de congé en attente.</td>
+                                <td colspan="8" style="text-align: center; padding: 40px; color: #999;">Aucune demande de congé trouvée.</td>
                             </tr>
                         <% } %>
                     </tbody>
@@ -244,74 +228,6 @@
             </div>
         </div>
 
-        <!-- SECTION STATUT IT -->
-        <div id="it-status" class="content-section">
-            <div class="section-header">
-                <h2 class="section-title">Statut IT</h2>
-            </div>
-
-            <div class="stats-grid">
-                <div class="stat-card" style="border-bottom-color: <%= itColor %>;">
-                    <div class="stat-icon" style="background-color: <%= itColor %>;"><i class="fas fa-server"></i></div>
-                    <div class="stat-info">
-                        <h3><%= finalStatus %></h3>
-                        <p>Serveur Principal</p>
-                    </div>
-                </div>
-                <div class="stat-card" style="border-bottom-color: #27ae60;">
-                    <div class="stat-icon" style="background-color: #27ae60;"><i class="fas fa-database"></i></div>
-                    <div class="stat-info">
-                        <h3>Opérationnel</h3>
-                        <p>Base de Données</p>
-                    </div>
-                </div>
-                <div class="stat-card" style="border-bottom-color: #27ae60;">
-                    <div class="stat-icon" style="background-color: #27ae60;"><i class="fas fa-network-wired"></i></div>
-                    <div class="stat-info">
-                        <h3>Connecté</h3>
-                        <p>Réseau</p>
-                    </div>
-                </div>
-                <div class="stat-card" style="border-bottom-color: #3498db;">
-                    <div class="stat-icon" style="background-color: #3498db;"><i class="fas fa-envelope"></i></div>
-                    <div class="stat-info">
-                        <h3><%= ticketCount %></h3>
-                        <p>Tickets Ouverts</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="table-container" style="margin-top: 30px;">
-                <h3 style="margin-bottom: 20px; color: #333;">Tickets IT Récents</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Titre</th>
-                            <th>Priorité</th>
-                            <th>Statut</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>#001</td>
-                            <td>Problème d'accès réseau</td>
-                            <td><span class="status-badge badge-high">Haute</span></td>
-                            <td><span class="status-badge badge-pending">En cours</span></td>
-                            <td>10/01/2024</td>
-                        </tr>
-                        <tr>
-                            <td>#002</td>
-                            <td>Mise à jour logiciel</td>
-                            <td><span class="status-badge badge-pending">Moyenne</span></td>
-                            <td><span class="status-badge badge-approved">Résolu</span></td>
-                            <td>08/01/2024</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
 
     </main>
 
@@ -391,24 +307,34 @@
             const formData = new FormData(event.target);
             const data = Object.fromEntries(formData);
             
-            // Ici, vous pouvez envoyer les données au serveur via fetch
+            console.log('📝 Données à envoyer:', data);
+            
+            // Envoyer les données au serveur via fetch
             fetch('/admin/employees/add', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('📡 Réponse reçue:', response.status);
+                if (!response.ok) {
+                    throw new Error('Erreur HTTP: ' + response.status);
+                }
+                return response.json();
+            })
             .then(result => {
+                console.log('✅ Résultat:', result);
                 if (result.success) {
-                    alert('Employé ajouté avec succès !');
+                    alert('✅ Employé ajouté avec succès !');
+                    closeAddEmployeeModal();
                     location.reload();
                 } else {
-                    alert('Erreur : ' + result.message);
+                    alert('❌ Erreur : ' + result.message);
                 }
             })
             .catch(err => {
-                console.error(err);
-                alert('Erreur lors de l\'ajout de l\'employé');
+                console.error('❌ Erreur:', err);
+                alert('❌ Erreur lors de l\'ajout de l\'employé. Vérifiez la console pour plus de détails.');
             });
         }
 
@@ -438,6 +364,11 @@
         }
 
         function validerConge(id) {
+            if (!id || id === 0) {
+                alert('Erreur : ID de congé invalide');
+                return;
+            }
+            
             if (confirm('Approuver cette demande de congé ?')) {
                 fetch('/admin/conges/valider/' + id, {
                     method: 'POST'
@@ -445,20 +376,25 @@
                 .then(response => response.json())
                 .then(result => {
                     if (result.success) {
-                        alert('Congé approuvé !');
+                        alert('✅ Congé approuvé avec succès !');
                         location.reload();
                     } else {
-                        alert('Erreur : ' + result.message);
+                        alert('❌ Erreur : ' + result.message);
                     }
                 })
                 .catch(err => {
-                    console.error(err);
-                    alert('Erreur lors de la validation');
+                    console.error('Erreur:', err);
+                    alert('❌ Erreur lors de la validation. Veuillez réessayer.');
                 });
             }
         }
 
         function refuserConge(id) {
+            if (!id || id === 0) {
+                alert('Erreur : ID de congé invalide');
+                return;
+            }
+            
             if (confirm('Refuser cette demande de congé ?')) {
                 fetch('/admin/conges/refuser/' + id, {
                     method: 'POST'
@@ -466,18 +402,20 @@
                 .then(response => response.json())
                 .then(result => {
                     if (result.success) {
-                        alert('Congé refusé.');
+                        alert('✅ Congé refusé.');
                         location.reload();
                     } else {
-                        alert('Erreur : ' + result.message);
+                        alert('❌ Erreur : ' + result.message);
                     }
                 })
                 .catch(err => {
-                    console.error(err);
-                    alert('Erreur lors du refus');
+                    console.error('Erreur:', err);
+                    alert('❌ Erreur lors du refus. Veuillez réessayer.');
                 });
             }
         }
     </script>
 </body>
 </html>
+
+

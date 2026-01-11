@@ -63,14 +63,20 @@ app.get('/admin-dashboard', (req, res) => {
     // Récupérer tous les employés
     const queryEmployes = 'SELECT id_employe, prenom, nom, email, role FROM employe ORDER BY nom, prenom';
     
-    // Récupérer les congés en attente (si la table existe)
+    // Récupérer les congés en attente pour le compteur
+    const queryCongesEnAttente = `
+        SELECT COUNT(*) as count 
+        FROM conge 
+        WHERE statut = 'en_attente' OR statut IS NULL
+    `;
+    
+    // Récupérer tous les congés pour la section Validations
     const queryConges = `
         SELECT c.*, e.prenom as prenom_employe, e.nom as nom_employe 
         FROM conge c 
         LEFT JOIN employe e ON c.id_employe = e.id_employe 
-        WHERE c.statut = 'en_attente' OR c.statut IS NULL
-        ORDER BY c.date_debut DESC
-        LIMIT 20
+        ORDER BY COALESCE(c.date_demande, c.date_debut) DESC, c.id_conge DESC
+        LIMIT 50
     `;
 
     db.query(queryEmployes, (err, employes) => {
@@ -79,31 +85,29 @@ app.get('/admin-dashboard', (req, res) => {
             employes = [];
         }
 
-        // Récupérer les congés
+        // Récupérer tous les congés pour la section Validations
         db.query(queryConges, (err, conges) => {
             if (err) {
-                console.error('Erreur lors de la récupération des congés (la table peut ne pas exister):', err);
+                console.error('❌ Erreur lors de la récupération des congés:', err);
+                console.error('Code erreur:', err.code);
+                console.error('Message:', err.message);
                 conges = [];
+            } else {
+                console.log(`✅ ${conges.length} congé(s) récupéré(s) pour l'admin`);
             }
 
-            // Compter les tickets IT (exemple - à adapter selon votre structure)
-            const queryTickets = 'SELECT COUNT(*) as count FROM ticket WHERE statut = "ouvert" OR statut = "en_cours"';
-            
-            db.query(queryTickets, (err, ticketsResult) => {
+            // Compter les congés en attente pour le dashboard
+            db.query(queryCongesEnAttente, (err, congesEnAttenteResult) => {
                 if (err) {
-                    console.error('Erreur lors du comptage des tickets:', err);
+                    console.error('Erreur lors du comptage des congés en attente:', err);
                 }
-                
-                const nbTickets = ticketsResult && ticketsResult[0] ? ticketsResult[0].count : 5;
+                const nbCongesEnAttente = congesEnAttenteResult && congesEnAttenteResult[0] ? congesEnAttenteResult[0].count : 0;
 
                 res.render('admin', { 
                     user: user,
                     employes: employes || [],
                     conges: conges || [],
-                    nbTickets: nbTickets,
-                    nbEmployes: employes ? employes.length : 0,
-                    nbConges: conges ? conges.length : 0,
-                    systemStatus: 'Opérationnel'
+                    nbConges: nbCongesEnAttente
                 });
             });
         });
@@ -231,7 +235,16 @@ app.post('/services/restauration/recharger', (req, res) => {
 });
 
 app.get('/services/maintenance', (req, res) => res.render('maintenance', { user: getUser('employe') }));
-app.get('/services/rh', (req, res) => res.render('rh', { user: getUser('employe') }));
+app.get('/services/rh', (req, res) => {
+    // Récupérer l'utilisateur depuis la session
+    const user = req.session.user;
+    
+    if (!user) {
+        return res.redirect('/login');
+    }
+    
+    res.render('rh', { user: user });
+});
 app.get('/services/auto', (req, res) => res.render('auto', { user: getUser('employe') }));
 app.get('/services/salles', (req, res) => res.render('salles', { user: getUser('employe') }));
 app.get('/services/support', (req, res) => res.render('support', { user: getUser('employe') }));
@@ -270,16 +283,33 @@ app.post('/admin/employees/add', requireAdmin, (req, res) => {
             return res.json({ success: false, message: 'Cet email est déjà utilisé' });
         }
 
-        // Insérer le nouvel employé
-        const insertQuery = 'INSERT INTO employe (prenom, nom, email, mot_de_passe, role, date_creation) VALUES (?, ?, ?, ?, ?, NOW())';
-        db.query(insertQuery, [prenom, nom, email, mot_de_passe, role || 'employe'], (err, result) => {
+        // Récupérer le premier département disponible (id minimum)
+        const getDepartement = 'SELECT id FROM departement ORDER BY id ASC LIMIT 1';
+        db.query(getDepartement, (err, departements) => {
             if (err) {
-                console.error('Erreur lors de l\'ajout de l\'employé:', err);
-                return res.json({ success: false, message: 'Erreur lors de l\'ajout' });
+                console.error('Erreur lors de la récupération du département:', err);
+                return res.json({ success: false, message: 'Erreur lors de la récupération des départements' });
             }
 
-            console.log(`✅ Employé ajouté: ${prenom} ${nom} (ID: ${result.insertId})`);
-            res.json({ success: true, message: 'Employé ajouté avec succès', id: result.insertId });
+            if (!departements || departements.length === 0) {
+                return res.json({ success: false, message: 'Aucun département trouvé. Veuillez créer au moins un département avant d\'ajouter un employé.' });
+            }
+
+            const id_departement = departements[0].id;
+
+            // Insérer le nouvel employé avec le département récupéré
+            const insertQuery = 'INSERT INTO employe (prenom, nom, email, mot_de_passe, role, id_departement, date_creation) VALUES (?, ?, ?, ?, ?, ?, NOW())';
+            db.query(insertQuery, [prenom, nom, email, mot_de_passe, role || 'employe', id_departement], (err, result) => {
+                if (err) {
+                    console.error('❌ Erreur lors de l\'ajout de l\'employé:', err);
+                    console.error('Code erreur:', err.code);
+                    console.error('Message SQL:', err.sqlMessage);
+                    return res.json({ success: false, message: 'Erreur lors de l\'ajout: ' + (err.sqlMessage || err.message) });
+                }
+
+                console.log(`✅ Employé ajouté: ${prenom} ${nom} (ID: ${result.insertId}, Département: ${id_departement})`);
+                res.json({ success: true, message: 'Employé ajouté avec succès', id: result.insertId });
+            });
         });
     });
 });
@@ -314,7 +344,8 @@ app.delete('/admin/employees/delete/:id', requireAdmin, (req, res) => {
 app.post('/admin/conges/valider/:id', requireAdmin, (req, res) => {
     const id = req.params.id;
 
-    const updateQuery = 'UPDATE conge SET statut = "approuve", date_traitement = NOW() WHERE id_conge = ?';
+    // Note: La table conge n'a pas de colonne date_traitement selon la structure de la base
+    const updateQuery = 'UPDATE conge SET statut = "approuve" WHERE id_conge = ?';
     db.query(updateQuery, [id], (err, result) => {
         if (err) {
             console.error('Erreur lors de la validation du congé:', err);
@@ -338,7 +369,8 @@ app.post('/admin/conges/valider/:id', requireAdmin, (req, res) => {
 app.post('/admin/conges/refuser/:id', requireAdmin, (req, res) => {
     const id = req.params.id;
 
-    const updateQuery = 'UPDATE conge SET statut = "refuse", date_traitement = NOW() WHERE id_conge = ?';
+    // Note: La table conge n'a pas de colonne date_traitement selon la structure de la base
+    const updateQuery = 'UPDATE conge SET statut = "refuse" WHERE id_conge = ?';
     db.query(updateQuery, [id], (err, result) => {
         if (err) {
             console.error('Erreur lors du refus du congé:', err);
@@ -355,6 +387,82 @@ app.post('/admin/conges/refuser/:id', requireAdmin, (req, res) => {
 
         console.log(`✅ Congé refusé (ID: ${id})`);
         res.json({ success: true, message: 'Congé refusé' });
+    });
+});
+
+// Soumettre une demande de congé (depuis la page RH)
+app.post('/services/rh/demande-conge', (req, res) => {
+    const user = req.session.user;
+    
+    if (!user) {
+        return res.json({ success: false, message: 'Non authentifié' });
+    }
+
+    const { type, date_debut, date_fin, commentaire } = req.body;
+
+    // Log des données reçues pour le débogage
+    console.log('📝 Données reçues pour demande de congé:', {
+        id_employe: user.id_employe,
+        type: type,
+        date_debut: date_debut,
+        date_fin: date_fin,
+        commentaire: commentaire
+    });
+
+    // Validation des données
+    if (!type || !date_debut || !date_fin) {
+        return res.json({ success: false, message: 'Tous les champs obligatoires doivent être remplis' });
+    }
+
+    // Vérifier que l'utilisateur a un ID
+    if (!user.id_employe) {
+        console.error('❌ L\'utilisateur n\'a pas d\'ID employé:', user);
+        return res.json({ success: false, message: 'Erreur d\'authentification: ID employé manquant' });
+    }
+
+    // Validation des dates
+    const dateDebut = new Date(date_debut);
+    const dateFin = new Date(date_fin);
+    
+    if (dateFin < dateDebut) {
+        return res.json({ success: false, message: 'La date de fin doit être postérieure à la date de début' });
+    }
+
+    // Insérer la demande de congé dans la base de données
+    // Note: La table conge n'a pas de colonne commentaire selon la structure de la base
+    const insertQuery = `
+        INSERT INTO conge (id_employe, type, date_debut, date_fin, statut, date_demande) 
+        VALUES (?, ?, ?, ?, 'en_attente', NOW())
+    `;
+    
+    db.query(insertQuery, [user.id_employe, type, date_debut, date_fin], (err, result) => {
+        if (err) {
+            console.error('❌ Erreur lors de l\'insertion de la demande de congé:', err);
+            console.error('Code erreur:', err.code);
+            console.error('Message SQL:', err.sqlMessage);
+            console.error('SQL:', err.sql);
+            
+            // Si la table n'existe pas, on peut créer un message d'erreur plus explicite
+            if (err.code === 'ER_NO_SUCH_TABLE') {
+                return res.json({ success: false, message: 'La table conge n\'existe pas dans la base de données. Veuillez créer la table d\'abord.' });
+            }
+            
+            // Gérer les erreurs de colonnes manquantes
+            if (err.code === 'ER_BAD_FIELD_ERROR') {
+                return res.json({ success: false, message: 'Erreur de structure de base de données. Une colonne est manquante dans la table conge.' });
+            }
+            
+            // Retourner un message d'erreur plus détaillé
+            const errorMessage = err.sqlMessage || err.message || 'Erreur lors de l\'enregistrement de la demande';
+            return res.json({ success: false, message: errorMessage });
+        }
+
+        console.log(`✅ Demande de congé créée par l'employé ${user.id_employe} (ID: ${result.insertId})`);
+        res.json({ 
+            success: true, 
+            message: 'Demande de congé envoyée avec succès',
+            id_conge: result.insertId
+        });
     });
 });
 
@@ -423,3 +531,4 @@ app.get('/logout', (req, res) => {
 app.listen(port, () => {
     console.log(`🚀 Serveur lancé sur http://localhost:${port}`);
 });
+   

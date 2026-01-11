@@ -64,36 +64,77 @@
         <p style="margin-bottom: 20px; color: #666;">Faire une demande de congés ou déclarer une absence.</p>
         
         <div class="form-container">
-            <form>
+            <form id="congeForm" onsubmit="submitConge(event)">
                 <div class="form-group">
                     <label>Type de demande</label>
-                    <select>
-                        <option>Congés Payés</option>
-                        <option>RTT</option>
-                        <option>Arrêt Maladie</option>
-                        <option>Congé sans solde</option>
+                    <select name="type" id="type" required>
+                        <option value="Congés Payés">Congés Payés</option>
+                        <option value="RTT">RTT</option>
+                        <option value="Arrêt Maladie">Arrêt Maladie</option>
+                        <option value="Congé sans solde">Congé sans solde</option>
                     </select>
                 </div>
 
                 <div class="form-group dates-row">
                     <div style="flex: 1;">
                         <label>Date de début</label>
-                        <input type="date">
+                        <input type="date" name="date_debut" id="date_debut" required>
                     </div>
                     <div style="flex: 1;">
                         <label>Date de fin</label>
-                        <input type="date">
+                        <input type="date" name="date_fin" id="date_fin" required>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label>Commentaire (Facultatif)</label>
-                    <textarea style="height: 100px; resize: none;" placeholder="Précisions pour le manager..."></textarea>
+                    <textarea name="commentaire" id="commentaire" style="height: 100px; resize: none;" placeholder="Précisions pour le manager..."></textarea>
                 </div>
 
-                <button type="button" onclick="alert('Demande envoyée aux RH !')">Envoyer la demande</button>
+                <button type="submit">Envoyer la demande</button>
             </form>
         </div>
+
+        <script>
+            function submitConge(event) {
+                event.preventDefault();
+                
+                const form = event.target;
+                const formData = new FormData(form);
+                const data = Object.fromEntries(formData);
+                
+                // Validation des dates
+                const dateDebut = new Date(data.date_debut);
+                const dateFin = new Date(data.date_fin);
+                
+                if (dateFin < dateDebut) {
+                    alert('La date de fin doit être postérieure à la date de début');
+                    return;
+                }
+                
+                // Envoyer la demande au serveur
+                fetch('/services/rh/demande-conge', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        alert('✅ Demande de congé envoyée avec succès !');
+                        form.reset();
+                    } else {
+                        alert('❌ Erreur : ' + result.message);
+                    }
+                })
+                .catch(err => {
+                    console.error('Erreur:', err);
+                    alert('❌ Erreur lors de l\'envoi de la demande');
+                });
+            }
+        </script>
     </main>
 </body>
 </html>
